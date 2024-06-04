@@ -20,6 +20,6 @@ public:
 
 
 protected:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComp;
 };
