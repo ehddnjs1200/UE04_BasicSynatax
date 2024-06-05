@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,20 +8,20 @@ UCLASS()
 class U04_THIRDPERSONCPP_API ACStaticMeshBase : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ACStaticMeshBase();
 
 protected:
 	virtual void BeginPlay() override;
 
-public:	
-
+private:
+	UFUNCTION()
+		void UpdateParameters();
 
 protected:
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* MeshComp;
+		UStaticMeshComponent* MeshComp;
 
 	UMaterialInstanceDynamic* DynamicMaterial;
-
 };

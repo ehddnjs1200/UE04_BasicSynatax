@@ -22,10 +22,8 @@ void ACStaticMeshBase_Spawm::BeginPlay()
 		SpawnedObjects[i] = GetWorld()->SpawnActor<ACStaticMeshBase>(SpawnClasses[i], trasnform);
 
 		FVector location = GetActorLocation();
-
 		SpawnedObjects[i]->SetActorLocation(FVector(location.X, location.Y + i * 200, location.Z));
-	};
-
+	}
 
 }
 
