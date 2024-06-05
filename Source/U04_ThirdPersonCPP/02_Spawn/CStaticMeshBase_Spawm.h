@@ -20,14 +20,17 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+protected:
 	UPROPERTY(EditDefaultsOnly)
 		UClass* WhatIsClassRef;
 
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<ACStaticMeshBase> WhatIsTSubClassOf;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Spawn");
-	TSubclassOf<ACStaticMeshBase> SpawnClasses[4];
+	UPROPERTY(EditDefaultsOnly, Category = "Spawn")
+		TSubclassOf<ACStaticMeshBase> SpawnClasses[4];
 
+private:
+	ACStaticMeshBase* SpawnedObjects[4];
 
 };

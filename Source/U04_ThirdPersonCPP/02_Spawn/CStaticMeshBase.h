@@ -22,4 +22,7 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComp;
+
+	UMaterialInstanceDynamic* DynamicMaterial;
+
 };
