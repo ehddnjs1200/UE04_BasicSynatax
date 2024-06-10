@@ -1,6 +1,5 @@
-
-
 #include "CAnimInstance.h"
+#include "Global.h"
 
 
 void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -9,7 +8,7 @@ void UCAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	if (OnwerPawn)
 	{
-
+		Speed = OnwerPawn->GetVelocity().Size2D();
 	}
 }
 

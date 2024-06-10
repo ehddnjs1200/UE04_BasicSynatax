@@ -4,6 +4,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
+#include "CAnimInstance.h"
 
 
 ACPlayer::ACPlayer()
@@ -30,6 +31,13 @@ ACPlayer::ACPlayer()
 
 	GetMesh()->SetRelativeLocation(FVector(0, 0, -88));
 	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
+	ConstructorHelpers::FClassFinder<UCAnimInstance> AnimInstanceClass(TEXT("/Game/ABP_CPlayer"));
+
+	if (AnimInstanceClass.Succeeded())
+	{
+		GetMesh()->SetAnimInstanceClass(AnimInstanceClass.Class);
+	}
+	
 }
 
 void ACPlayer::BeginPlay()
@@ -44,6 +52,13 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACPlayer::OnMoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ACPlayer::OnMoveRight);
+	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+
+
+	PlayerInputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &ACPlayer::OnSprint);
+	PlayerInputComponent->BindAction("Sprint", EInputEvent::IE_Released, this, &ACPlayer::OffSprint);
+
 }
 
 void ACPlayer::OnMoveForward(float Axis)
@@ -60,5 +75,15 @@ void ACPlayer::OnMoveRight(float Axis)
 	FVector direction = FQuat(ControlRotation).GetRightVector();
 
 	AddMovementInput(direction, Axis);
+}
+
+void ACPlayer::OnSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}
+
+void ACPlayer::OffSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 400.f;
 }
 

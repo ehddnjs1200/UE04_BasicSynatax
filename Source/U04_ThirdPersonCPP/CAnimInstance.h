@@ -14,6 +14,10 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeBeginPlay() override;
 
+protected:
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
+	float Speed;
+
 private:
 	APawn* OnwerPawn;
 
