@@ -11,8 +11,8 @@ ACPlayer::ACPlayer()
 {
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>("SpringArmComp");
 	SpringArmComp->SetupAttachment(GetCapsuleComponent());
-	SpringArmComp->SetRelativeLocation(FVector(0, 0, 60));
-	SpringArmComp->TargetArmLength = 200.f;
+	SpringArmComp->SetRelativeLocation(FVector(0, 0, 100));
+	SpringArmComp->TargetArmLength = 300.f;
 	SpringArmComp->bDoCollisionTest = false;
 	SpringArmComp->bUsePawnControlRotation = true;
 
