@@ -1,4 +1,6 @@
 #include "CPlayer.h"
+#include "Assignment/CChest.h"
+#include "Assignment/CDoor.h"
 #include "Global.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -9,6 +11,8 @@
 
 ACPlayer::ACPlayer()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>("SpringArmComp");
 	SpringArmComp->SetupAttachment(GetCapsuleComponent());
 	SpringArmComp->SetRelativeLocation(FVector(0, 0, 100));
@@ -37,12 +41,15 @@ ACPlayer::ACPlayer()
 	{
 		GetMesh()->SetAnimInstanceClass(AnimInstanceClass.Class);
 	}
-	
+
 }
 
 void ACPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	OnActorBeginOverlap.AddDynamic(this, &ACPlayer::ActorBeginOverlap);
+	OnActorEndOverlap.AddDynamic(this, &ACPlayer::ActorEndOverlap);
 
 }
 
@@ -59,6 +66,21 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &ACPlayer::OnSprint);
 	PlayerInputComponent->BindAction("Sprint", EInputEvent::IE_Released, this, &ACPlayer::OffSprint);
 
+	PlayerInputComponent->BindAction("Open", EInputEvent::IE_Pressed, this, &ACPlayer::HandleFKeyPressed);
+
+}
+
+void ACPlayer::ActorBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
+{
+	if (OtherActor && OtherActor != this)
+	{
+		Thing = OtherActor;
+	}
+}
+
+void ACPlayer::ActorEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
+{
+	Thing = nullptr;
 }
 
 void ACPlayer::OnMoveForward(float Axis)
@@ -86,4 +108,75 @@ void ACPlayer::OffSprint()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 400.f;
 }
+
+void ACPlayer::HandleFKeyPressed()
+{
+	
+	if (Thing != nullptr)
+	{
+		if (ACChest* Chest = Cast<ACChest>(Thing))
+			OpenChest(Chest);
+		
+		if (ACDoor* Door = Cast<ACDoor>(Thing))
+			OpenDoor(Door);
+	}
+}
+
+void ACPlayer::OpenDoor(ACDoor* Door)
+{
+	if (Door->bIsPossible)
+	{
+		Door->Open->PlayFromStart();
+	}
+	else
+	{
+		FString Text = "You don't have " + Key + ".";
+		Door->ChangeText(Text);
+	}
+	for (int32 i = 0; i < PossessKeys.Num(); i++)
+	{
+		if (PossessKeys[i] == Key)
+		{
+			PossessKeys.RemoveAt(i);
+			break;
+		}
+	}
+}
+
+void ACPlayer::OpenChest(ACChest* Chest)
+{
+	if (!Chest->bIsOpen)
+	{
+		Chest->Open->PlayFromStart();
+	}
+	for (int32 i = 0; i < PossessKeys.Num(); i++)
+	{
+		if (PossessKeys[i] == Key)
+		{
+			bIsSame = true;
+			break;
+		}
+	}
+	if (!bIsSame)
+	{
+		PossessKeys.Add(Key);
+	}
+}
+
+void ACPlayer::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	CLog::Print("PossessKeys", 100);
+
+	if (PossessKeys.Num() != 0)
+	{
+		for (int32 i = 0; i < PossessKeys.Num(); i++)
+		{
+			CLog::Print(PossessKeys[i], 99 - i, 0.1f);
+		}
+	}
+}
+
+
 

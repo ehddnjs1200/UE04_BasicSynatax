@@ -6,7 +6,8 @@
 
 class USpringArmComponent;
 class UCameraComponent;
-
+class ACDoor;
+class ACChest;
 
 UCLASS()
 class U04_THIRDPERSONCPP_API ACPlayer : public ACharacter
@@ -20,12 +21,29 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+
+public:
+
+	UFUNCTION()
+	void ActorBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
+	UFUNCTION()
+	void ActorEndOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
 private:
 	void OnMoveForward(float Axis);
 	void OnMoveRight(float Axis);
 
 	void OnSprint();
 	void OffSprint();
+
+	void HandleFKeyPressed();
+
+	void OpenDoor(ACDoor* Door);
+
+	void OpenChest(ACChest* Chest);
+
+	virtual void Tick(float DeltaTime) override;
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -34,4 +52,12 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* CameraComp;
 
+public:
+	FString Key = "None";
+
+	TArray<FString> PossessKeys;
+
+	AActor* Thing;
+
+	bool bIsSame = false;
 };
