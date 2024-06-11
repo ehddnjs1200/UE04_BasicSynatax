@@ -12,7 +12,7 @@ ACPlayer::ACPlayer()
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>("SpringArmComp");
 	SpringArmComp->SetupAttachment(GetCapsuleComponent());
 	SpringArmComp->SetRelativeLocation(FVector(0, 0, 60));
-	SpringArmComp->TargetArmLength = 200.f;
+	SpringArmComp->TargetArmLength = 400.f;
 	SpringArmComp->bDoCollisionTest = false;
 	SpringArmComp->bUsePawnControlRotation = true;
 
@@ -55,6 +55,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
+	
 
 	PlayerInputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &ACPlayer::OnSprint);
 	PlayerInputComponent->BindAction("Sprint", EInputEvent::IE_Released, this, &ACPlayer::OffSprint);
