@@ -115,7 +115,7 @@ void ACDoor::OpenCallback(float val)
 	if (bIsOpen != true)
 	{
 		FRotator NewRotation = FRotator::ZeroRotator;
-		NewRotation.Yaw = FMath::Lerp(0.0f, 120.0f, val);
+		NewRotation.Yaw = FMath::Lerp(0.0f, -120.0f, val);
 		SkeletalMesh_Door->SetRelativeRotation(NewRotation);
 	}
 }
@@ -123,6 +123,7 @@ void ACDoor::OpenCallback(float val)
 void ACDoor::OnOpenFinished()
 {
 	bIsOpen = true;
+	ChangeText("");
 }
 
 FString ACDoor::DetermineColorName(const FLinearColor& val) const

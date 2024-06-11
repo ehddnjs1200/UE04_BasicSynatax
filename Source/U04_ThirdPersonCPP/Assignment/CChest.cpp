@@ -115,6 +115,7 @@ void ACChest::OpenCallback(float val)
 void ACChest::OnOpenFinished()
 {
 	bIsOpen = true;
+	ChangeText("");
 }
 
 FString ACChest::DetermineColorName(const FLinearColor& val) const
@@ -135,5 +136,10 @@ FString ACChest::DetermineColorName(const FLinearColor& val) const
 	{
 		return TEXT("Undefined");
 	}
+}
+
+void ACChest::ChangeText(FString Text)
+{
+	TextRenderComp->SetText(Text);
 }
 

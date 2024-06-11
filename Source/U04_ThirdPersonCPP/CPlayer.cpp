@@ -126,7 +126,8 @@ void ACPlayer::OpenDoor(ACDoor* Door)
 {
 	if (Door->bIsPossible)
 	{
-		Door->Open->PlayFromStart();
+		if (!Door->bIsOpen)
+			Door->Open->PlayFromStart();
 	}
 	else
 	{
@@ -137,7 +138,8 @@ void ACPlayer::OpenDoor(ACDoor* Door)
 	{
 		if (PossessKeys[i] == Key)
 		{
-			PossessKeys.RemoveAt(i);
+			if (!Door->bIsOpen)
+				PossessKeys.RemoveAt(i);
 			break;
 		}
 	}

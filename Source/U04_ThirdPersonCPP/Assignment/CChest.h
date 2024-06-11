@@ -39,6 +39,7 @@ public:
 
 	FString DetermineColorName(const FLinearColor& Color) const;
 
+	void ChangeText(FString Text);
 public:
 	UPROPERTY(VisibleDefaultsOnly)
 	USceneComponent* RootComp;
