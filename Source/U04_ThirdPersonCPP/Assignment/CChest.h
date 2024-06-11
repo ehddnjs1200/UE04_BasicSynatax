@@ -29,15 +29,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* SkeletalMesh_Body;
 
-	//UFUNCTION(BlueprintImplementableEvent, Category = "CustomEvents")
-	//void Open();
-
-
 	UFUNCTION(BlueprintImplementableEvent, Category = "CustomEvents")
-		void Open();
+	void Open();
 
 	UFUNCTION(BlueprintCallable, Category = "CustomEvents")
-		void OpenEvents();
+	void OpenEvents();
 
 public:	
 	virtual void Tick(float DeltaTime) override;
