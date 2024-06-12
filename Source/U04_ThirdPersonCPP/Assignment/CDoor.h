@@ -42,6 +42,10 @@ public:
 
 	void ChangeText(FString Text);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "CPP Custom Evnet")
+	void PlaySoundAndEffect();
+
+
 
 public:
 	UPROPERTY(VisibleDefaultsOnly)

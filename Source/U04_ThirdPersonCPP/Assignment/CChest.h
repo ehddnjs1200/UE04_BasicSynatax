@@ -39,6 +39,9 @@ public:
 
 	FString DetermineColorName(const FLinearColor& Color) const;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "CPP Custom Evnet")
+	void PlaySoundAndEffect();
+
 	void ChangeText(FString Text);
 public:
 	UPROPERTY(VisibleDefaultsOnly)

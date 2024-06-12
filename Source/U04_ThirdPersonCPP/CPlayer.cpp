@@ -127,7 +127,10 @@ void ACPlayer::OpenDoor(ACDoor* Door)
 	if (Door->bIsPossible)
 	{
 		if (!Door->bIsOpen)
+		{
 			Door->Open->PlayFromStart();
+			Door->PlaySoundAndEffect();
+		}
 	}
 	else
 	{
@@ -150,6 +153,7 @@ void ACPlayer::OpenChest(ACChest* Chest)
 	if (!Chest->bIsOpen)
 	{
 		Chest->Open->PlayFromStart();
+		Chest->PlaySoundAndEffect();
 	}
 	for (int32 i = 0; i < PossessKeys.Num(); i++)
 	{
