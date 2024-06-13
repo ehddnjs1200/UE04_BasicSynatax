@@ -2,15 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "CWeaponInterface.h"
 #include "CPlayer.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UMaterialInstanceDynamic;
+class ACWeapon;
 
 
 UCLASS()
-class U04_THIRDPERSONCPP_API ACPlayer : public ACharacter
+class U04_THIRDPERSONCPP_API ACPlayer : public ACharacter , public ICWeaponInterface
 {
 	GENERATED_BODY()
 
@@ -19,6 +21,9 @@ public:
 
 	UFUNCTION(Exec)
 	void ChangeSpeed(float InMoveSpeed = 400.f);
+
+	FORCEINLINE ACWeapon* GetWeapon() override { return Weapon; }
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -30,6 +35,8 @@ private:
 
 	void OnSprint();
 	void OffSprint();
+
+	void ToggleEquip();
 
 public:
 	UFUNCTION(BlueprintCallable)
@@ -45,5 +52,5 @@ private:
 	UMaterialInstanceDynamic* BodyMaterial;
 	UMaterialInstanceDynamic* LogoMaterial;
 
-
+	ACWeapon* Weapon;
 };

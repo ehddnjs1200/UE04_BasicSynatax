@@ -9,14 +9,16 @@ UCLASS()
 class U04_THIRDPERSONCPP_API UCAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
-	
 public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeBeginPlay() override;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
-	float Speed;
+		float Speed;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
+		bool bEquipped;
 
 private:
 	APawn* OnwerPawn;
