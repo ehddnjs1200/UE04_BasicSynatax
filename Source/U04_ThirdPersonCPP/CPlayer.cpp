@@ -1,6 +1,7 @@
 #include "CPlayer.h"
 #include "Assignment/CChest.h"
 #include "Assignment/CDoor.h"
+#include "Assignment/CKey.h"
 #include "Global.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -116,7 +117,6 @@ void ACPlayer::HandleFKeyPressed()
 	{
 		if (ACChest* Chest = Cast<ACChest>(Thing))
 			OpenChest(Chest);
-		
 		if (ACDoor* Door = Cast<ACDoor>(Thing))
 			OpenDoor(Door);
 	}
@@ -124,27 +124,23 @@ void ACPlayer::HandleFKeyPressed()
 
 void ACPlayer::OpenDoor(ACDoor* Door)
 {
-	if (Door->bIsPossible)
+	FindKey(Door);
+	if (bIsSame)
 	{
 		if (!Door->bIsOpen)
 		{
+
 			Door->Open->PlayFromStart();
 			Door->PlaySoundAndEffect();
+			UseKey(Door);
+			FString Text = "";
+			Door->ChangeText(Text);
 		}
 	}
 	else
 	{
-		FString Text = "You don't have " + Key + ".";
+		FString Text = "You don't have a " + Key + ".";
 		Door->ChangeText(Text);
-	}
-	for (int32 i = 0; i < PossessKeys.Num(); i++)
-	{
-		if (PossessKeys[i] == Key)
-		{
-			if (!Door->bIsOpen)
-				PossessKeys.RemoveAt(i);
-			break;
-		}
 	}
 }
 
@@ -155,34 +151,94 @@ void ACPlayer::OpenChest(ACChest* Chest)
 		Chest->Open->PlayFromStart();
 		Chest->PlaySoundAndEffect();
 	}
-	for (int32 i = 0; i < PossessKeys.Num(); i++)
+	else
 	{
-		if (PossessKeys[i] == Key)
-		{
-			bIsSame = true;
-			break;
-		}
-	}
-	if (!bIsSame)
-	{
-		PossessKeys.Add(Key);
+		PickUpKey(Chest);
 	}
 }
 
 void ACPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
 
-	CLog::Print("PossessKeys", 100);
-
-	if (PossessKeys.Num() != 0)
+void ACPlayer::PickUpKey(ACChest* Chest)
+{
+	if (Chest != nullptr)
 	{
-		for (int32 i = 0; i < PossessKeys.Num(); i++)
+		PossessKeys.Add(Chest->Inheritedkey);
+		Chest->Inheritedkey->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+		Chest->Inheritedkey->SetActorHiddenInGame(true);
+		CountKey(Chest->Inheritedkey->KEYName, true);
+		Chest->PickUpSound();
+	}
+}
+
+void ACPlayer::FindKey(ACDoor* Door)
+{
+	for (int32 i = 0; i < PossessKeys.Num(); i++)
+	{
+		if (Door->Key == PossessKeys[i]->KEYName)
 		{
-			CLog::Print(PossessKeys[i], 99 - i, 0.1f);
+			bIsSame = true;
+			return;
+		}
+	}
+	bIsSame = false;
+}
+
+void ACPlayer::UseKey(ACDoor* Door)
+{
+	for (int32 i = 0; i < PossessKeys.Num(); i++)
+	{
+		if (Door->Key == PossessKeys[i]->KEYName)
+		{
+			CountKey(PossessKeys[i]->KEYName, false);
+			ACKey* KeyToRemove = PossessKeys[i];
+			PossessKeys.RemoveAt(i);
+			if (KeyToRemove)
+			{
+				KeyToRemove->Destroy();
+			}
+			break;
 		}
 	}
 }
 
 
+void ACPlayer::RemoveKey(ACKey* KeyName)
+{
+	int32 NumRemoved = PossessKeys.Remove(KeyName);
+	if (NumRemoved > 0)
+	{
+		if (KeyName)
+		{
+			KeyName->Destroy();
+		}
+	}
+}
 
+void ACPlayer::CountKey(FString Text, bool Increase)
+{
+		if (Text == TEXT("RedKey"))
+		{
+			if (Increase)
+				Red++;
+			else
+				Red--;
+		}
+		else if (Text == TEXT("GreenKey"))
+		{
+			if (Increase)
+				Green++;
+			else
+				Green--;
+		}
+		else if (Text == TEXT("BlueKey"))
+		{
+			if (Increase)
+				Blue++;
+			else
+				Blue--;
+		}
+}

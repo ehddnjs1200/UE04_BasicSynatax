@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "GameFramework/Character.h"
 #include "CPlayer.generated.h"
 
@@ -8,6 +9,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class ACDoor;
 class ACChest;
+class ACKey;
 
 UCLASS()
 class U04_THIRDPERSONCPP_API ACPlayer : public ACharacter
@@ -45,6 +47,20 @@ private:
 
 	virtual void Tick(float DeltaTime) override;
 
+
+
+public:
+
+	void PickUpKey(ACChest* Chest);
+
+	void FindKey(ACDoor* Door);
+
+	void UseKey(ACDoor* Door);
+
+	void RemoveKey(ACKey* KeyName);
+
+	void CountKey(FString Text, bool Increase);
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArmComp;
@@ -53,11 +69,23 @@ private:
 	UCameraComponent* CameraComp;
 
 public:
+
 	FString Key = "None";
 
-	TArray<FString> PossessKeys;
+
+	TArray<ACKey*> PossessKeys;
+
+	AActor* FindKeys;
 
 	AActor* Thing;
 
 	bool bIsSame = false;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	int32 Red = 0;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	int32 Green = 0;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	int32 Blue = 0;
+
 };

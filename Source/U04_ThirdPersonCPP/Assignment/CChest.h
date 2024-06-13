@@ -8,6 +8,7 @@
 class UMaterialInstanceDynamic;
 class UBoxComponent;
 class UTextRenderComponent;
+class ACKey;
 
 UCLASS()
 class U04_THIRDPERSONCPP_API ACChest : public AActor
@@ -37,14 +38,20 @@ public:
 	UFUNCTION()
 		void OnOpenFinished();
 
-	FString DetermineColorName(const FLinearColor& Color) const;
+	FString DetermineColorName(const FLinearColor& Color);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "CPP Custom Evnet")
 	void PlaySoundAndEffect();
 
+	void SpawnKey();
+
 	void ChangeText(FString Text);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "CPP Custom Evnet")
+	void PickUpSound();
+
 public:
-	UPROPERTY(VisibleDefaultsOnly)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly)
 	USceneComponent* RootComp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -69,14 +76,18 @@ public:
 	FOnTimelineFloat InterpFunction{};
 	FOnTimelineEvent OpenFinished{};
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Keys")
 	FString Key;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UBoxComponent* BoxComp;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere , BlueprintReadOnly, Category = "Components")
 	UTextRenderComponent* TextRenderComp;
+
+	FString Keypath;
+	ACKey* Inheritedkey;
+
 
 	bool bIsOpen = false;
 };

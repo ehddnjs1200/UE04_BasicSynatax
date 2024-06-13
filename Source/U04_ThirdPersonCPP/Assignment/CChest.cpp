@@ -1,5 +1,6 @@
 #include "CChest.h"
 #include "CPlayer.h"
+#include "CKey.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -44,7 +45,6 @@ ACChest::ACChest()
 	TextRenderComp->HorizontalAlignment = EHorizTextAligment::EHTA_Center;
 	TextRenderComp->TextRenderColor = FColor::Black;
 	TextRenderComp->SetText("Press 'F' key to open");
-
 }
 
 void ACChest::OnConstruction(const FTransform& Transform)
@@ -83,23 +83,25 @@ void ACChest::BeginPlay()
 	}
 
 	Key = DetermineColorName(Color);
-
 }
 
 void ACChest::ActorBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
-	//Open->PlayFromStart();
 	if (OtherActor && OtherActor!=this)
 	{
-		ACPlayer* Player = Cast<ACPlayer>(OtherActor);
-		if (bIsOpen != true)
-			Player->Key = Key;
+		if (ACPlayer* Player = Cast<ACPlayer>(OtherActor))
+			if (bIsOpen != true)
+				Player->Key = Key;
 	}
 }
 
 void ACChest::ActorEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
-
+	if (OtherActor && OtherActor != this)
+	{
+		if (ACPlayer* Player = Cast<ACPlayer>(OtherActor))
+				Player->Key = "";
+	}
 }
 
 void ACChest::OpenCallback(float val)
@@ -116,30 +118,43 @@ void ACChest::OnOpenFinished()
 {
 	bIsOpen = true;
 	ChangeText("");
+	SpawnKey();
+	Inheritedkey->SetKeyMesh(*Keypath,*Key);
 }
 
-FString ACChest::DetermineColorName(const FLinearColor& val) const
+FString ACChest::DetermineColorName(const FLinearColor& val)
 {
 	if (val.R > val.G && val.R > val.B)
 	{
+		Keypath = TEXT("StaticMesh'/Game/Keys/Redkey/RedKey.RedKey'");
 		return TEXT("RedKey");
 	}
 	else if (val.G > val.R && val.G > val.B)
 	{
+		Keypath = TEXT("StaticMesh'/Game/Keys/GreenKey/GreenKey.GreenKey'");
 		return TEXT("GreenKey");
 	}
 	else if (val.B > val.R && val.B > val.G)
 	{
+		Keypath = TEXT("StaticMesh'/Game/Keys/BlueKey/BlueKey.BlueKey'");
 		return TEXT("BlueKey");
 	}
 	else
 	{
+		Keypath = TEXT("");
 		return TEXT("Undefined");
 	}
+}
+
+void ACChest::SpawnKey()
+{
+	FActorSpawnParameters SpawnParam;
+	SpawnParam.Owner = this;
+	SpawnParam.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Inheritedkey = GetWorld()->SpawnActor<ACKey>(SpawnParam);
 }
 
 void ACChest::ChangeText(FString Text)
 {
 	TextRenderComp->SetText(Text);
 }
-

@@ -43,7 +43,7 @@ ACDoor::ACDoor()
 	TextRenderComp->SetRelativeRotation(FRotator(180, 180, 0));
 	TextRenderComp->HorizontalAlignment = EHorizTextAligment::EHTA_Center;
 	TextRenderComp->TextRenderColor = FColor::Black;
-	TextRenderComp->SetText("Press 'F' key to open");
+	TextRenderComp->SetText(FText::FromString("Press 'F' key to open"));
 }
 
 void ACDoor::OnConstruction(const FTransform& Transform)
@@ -91,23 +91,19 @@ void ACDoor::ActorBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
 	if (OtherActor && OtherActor != this)
 	{
-		ACPlayer* Player = Cast<ACPlayer>(OtherActor);
-		Player->Key = Key;
-		for (int32 i = 0; i < Player->PossessKeys.Num(); i++)
-		{
-			if (Player->PossessKeys[i] == Key)
-			{
-				bIsPossible = true;	
-			}
-		}
+		if (ACPlayer* Player = Cast<ACPlayer>(OtherActor))
+			if (bIsOpen != true)
+				Player->Key = Key;
 	}
 }
 
 void ACDoor::ActorEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
-	ACPlayer* Player = Cast<ACPlayer>(OtherActor);
-	bIsPossible = false;
-	Player->Key = "";
+	if (OtherActor && OtherActor != this)
+	{
+		if (ACPlayer* Player = Cast<ACPlayer>(OtherActor))
+			Player->Key = "";
+	}
 }
 
 void ACDoor::OpenCallback(float val)
