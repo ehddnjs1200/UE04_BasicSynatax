@@ -15,10 +15,19 @@ public:
 
 protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
-		float Speed;
+	float Speed;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
-		bool bEquipped;
+	float Direction;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
+		float Pitch;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
+	bool bEquipped;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character")
+	bool bAiming;
 
 private:
 	APawn* OnwerPawn;

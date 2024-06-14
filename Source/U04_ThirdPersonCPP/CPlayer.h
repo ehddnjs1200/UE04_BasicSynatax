@@ -9,6 +9,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UMaterialInstanceDynamic;
 class ACWeapon;
+class UCUserWidget;
 
 
 UCLASS()
@@ -38,19 +39,40 @@ private:
 
 	void ToggleEquip();
 
+	void OnAim();
+	void OffAim();
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetBodyColor(FLinearColor InBodyColor, FLinearColor InLogoColor);
+
+
+protected:
+	UFUNCTION(BlueprintImplementableEvent)
+	void Begin_Zoom();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void End_Zoom();
+
 
 private:
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArmComp;
 
-	UPROPERTY(VisibleAnywhere)
+public:
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	UCameraComponent* CameraComp;
+
+private:
+	UPROPERTY(EditDefaultsOnly, Category = "WeaponClass")
+	TSubclassOf<ACWeapon> WeaponClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CUserWidget")
+	TSubclassOf<UCUserWidget> CUserWidget;
 
 	UMaterialInstanceDynamic* BodyMaterial;
 	UMaterialInstanceDynamic* LogoMaterial;
 
 	ACWeapon* Weapon;
+	UCUserWidget* UserWidget;
 };

@@ -24,6 +24,11 @@ public:
 
 	FORCEINLINE bool IsEquipped() { return bEquipped; }
 	FORCEINLINE bool IsEquipping() { return bEquipping; }
+	FORCEINLINE bool IsAiming() { return bAiming; }
+	
+
+	void Begin_Aiming();
+	void End_Aiming();
 
 	void Equip();
 	void Begin_Equip();
@@ -57,4 +62,6 @@ private:
 public:
 	bool bEquipped;
 	bool bEquipping;
+
+	bool bAiming;
 };
