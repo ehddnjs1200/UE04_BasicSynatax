@@ -1,12 +1,23 @@
 #include "CWeapon.h"
 #include "Global.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/DecalComponent.h"
 #include "GameFramework/Character.h"
+#include "Sound/SoundCue.h"
+#include "Materials/MaterialInstanceConstant.h"
+#include "CWeaponInterface.h"
+#include "CPlayer.h"
+#include "CBullet.h"
+#include "Widgets/CWeaponWidget.h"
+
+static TAutoConsoleVariable<bool> CVarDebugLine(TEXT("Tore.DrawDebugLine"), false, TEXT("Enable Draw Aim Line"), ECVF_Cheat);
 
 ACWeapon::ACWeapon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	FireInterval = 0.1f;
+	PitchSpeed = 0.25f;
 	HolsterSocket = "Holster_AR4";
 	HandSocket = "Hand_AR4";
 
@@ -29,6 +40,24 @@ ACWeapon::ACWeapon()
 	if (UnequipMontageAsset.Succeeded())
 	{
 		UnequipMontage = UnequipMontageAsset.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> ReloadMontageAsset(TEXT("AnimMontage'/Game/Character/Animations/AR4/Rifle_Reload_Montage.Rifle_Reload_Montage'"));
+	if (ReloadMontageAsset.Succeeded())
+	{
+		ReloadMontage = ReloadMontageAsset.Object;
+	}
+
+	ConstructorHelpers::FClassFinder<UCameraShake> CameraShakeClassAsset(TEXT("/Game/BP_FireShake"));
+	if (CameraShakeClassAsset.Succeeded())
+	{
+		CameraShakeClass = CameraShakeClassAsset.Class;
+	}
+
+	ConstructorHelpers::FClassFinder<ACBullet> BulletClassAsset(TEXT("/Game/BP_CBullet"));
+	if (BulletClassAsset.Succeeded())
+	{
+		BulletClass = BulletClassAsset.Class;
 	}
 }
 
@@ -53,6 +82,41 @@ void ACWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bAiming == false) return;
+
+	ICWeaponInterface* ImplementedActor = Cast<ICWeaponInterface>(OwnerCharacter);
+	if (ImplementedActor == nullptr) return;
+
+	FVector Start, End, Direction;
+	ImplementedActor->GetAimInfo(Start, End, Direction);
+
+	bool bDrawDebug = CVarDebugLine.GetValueOnGameThread();
+	if (bDrawDebug)
+	{
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, -1, 0, 2.f);
+	}
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(OwnerCharacter);
+
+	FHitResult Hit;
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECollisionChannel::ECC_Visibility, Params))
+	{
+		if (Hit.Component->IsSimulatingPhysics())
+		{
+			ImplementedActor->OnTarget();
+			return;
+		}
+	}
+
+	ImplementedActor->OffTarget();
+	
+}
+
+void ACWeapon::ToggleAutoFire()
+{
+	bAutoFire = !bAutoFire;
 }
 
 void ACWeapon::Begin_Aiming()
@@ -119,3 +183,156 @@ void ACWeapon::End_Unequip()
 	bEquipping = false;
 }
 
+void ACWeapon::Reload()
+{
+
+		OwnerCharacter->PlayAnimMontage(ReloadMontage);
+		
+}
+
+void ACWeapon::HiddenMag()
+{
+	MeshComp->HideBoneByName("b_gun_mag", EPhysBodyOp::PBO_None);
+}
+
+void ACWeapon::ShowMag()
+{
+	MeshComp->UnHideBoneByName("b_gun_mag");
+}
+
+void ACWeapon::SetCurrentAmmo(int32 Axis)
+{
+	CurrentAmmo = Axis;
+}
+
+void ACWeapon::SetMaximumAmmo(int32 Axis)
+{
+	MaximumAmmo = Axis;
+}
+
+void ACWeapon::Ammo()
+{
+	ACPlayer* Player = Cast<ACPlayer>(OwnerCharacter);
+	if (Player)
+	{
+		Player->GetWeaponWidget()->SetCurrentAmmo(CurrentAmmo);
+	}
+
+}
+
+void ACWeapon::Begin_Fire()
+{
+	if (bEquipped == false) return;
+	if (bEquipping == true) return;
+	if (bAiming == false) return;
+	if (bFiring == true) return;
+
+	bFiring = true;
+	CurrentPitch = 0.f;
+
+	if (bAutoFire)
+	{
+		GetWorld()->GetTimerManager().SetTimer(AutoTimerHandle, this, &ACWeapon::Firing, FireInterval, true, 0.f);
+		return;
+	}
+
+	Firing();
+}
+
+void ACWeapon::End_Fire()
+{
+	bFiring = false;
+
+	if (bAutoFire)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(AutoTimerHandle);
+	}
+}
+
+void ACWeapon::Firing()
+{
+	ACPlayer* Player = Cast<ACPlayer>(OwnerCharacter);
+	if (CurrentAmmo > 0)
+	{
+		CurrentAmmo--;
+		if (Player)
+		{
+			Player->GetWeaponWidget()->SetCurrentAmmo(CurrentAmmo);
+			APlayerController* PC = Player->GetController<APlayerController>();
+
+			if (CameraShakeClass)
+			{
+				PC->PlayerCameraManager->PlayCameraShake(CameraShakeClass);
+			}
+		}
+
+		ICWeaponInterface* ImplementedActor = Cast<ICWeaponInterface>(OwnerCharacter);
+		if (ImplementedActor == nullptr) return;
+
+		FVector Start, End, Direction;
+		ImplementedActor->GetAimInfo(Start, End, Direction);
+
+		FVector MuzzleLocation = MeshComp->GetSocketLocation("MuzzleFlash");
+		if (BulletClass)
+		{
+			GetWorld()->SpawnActor<ACBullet>(BulletClass, MuzzleLocation, Direction.Rotation());
+		}
+
+		if (MuzzleParticle)
+		{
+			UGameplayStatics::SpawnEmitterAttached(MuzzleParticle, MeshComp, "MuzzleFlash");
+		}
+
+		if (EjectParticle)
+		{
+			UGameplayStatics::SpawnEmitterAttached(EjectParticle, MeshComp, "EjectBullet");
+		}
+
+		if (FireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, MuzzleLocation);
+		}
+
+		CurrentPitch -= PitchSpeed * GetWorld()->GetDeltaSeconds();
+		if (CurrentPitch > -PitchSpeed)
+		{
+			OwnerCharacter->AddControllerPitchInput(CurrentPitch);
+		}
+
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+		Params.AddIgnoredActor(OwnerCharacter);
+
+		FHitResult Hit;
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECollisionChannel::ECC_Visibility, Params))
+		{
+			FVector ImpactLocation = Hit.ImpactPoint;
+			FRotator ImpactRotation = Hit.ImpactNormal.Rotation();
+			if (DecalMaterial)
+			{
+				UDecalComponent* DecalComp = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), DecalMaterial, FVector(5), ImpactLocation, ImpactRotation, 5.f);
+				DecalComp->SetFadeScreenSize(0);
+			}
+
+			if (ImpactParticle)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, ImpactLocation, ImpactRotation);
+			}
+
+			if (Hit.Component->IsSimulatingPhysics())
+			{
+				Direction = Hit.Actor->GetActorLocation() - OwnerCharacter->GetActorLocation();
+				Direction.Normalize();
+
+				Hit.Component->AddImpulseAtLocation(Direction * 3000.f, OwnerCharacter->GetActorLocation());
+			}
+		}
+	}
+	else
+	{
+		if (Player)
+		{
+			Player->Reload();
+		}
+	}
+}

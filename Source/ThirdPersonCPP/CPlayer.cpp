@@ -3,11 +3,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "CAnimInstance.h"
 #include "CWeapon.h"
 #include "Widgets/CCrossHairWidget.h"
+#include "Widgets/CWeaponWidget.h"
 
 ACPlayer::ACPlayer()
 {
@@ -46,6 +49,23 @@ ACPlayer::ACPlayer()
 	{
 		CrossHairWidgetClass = CrossHairWidgetClassAsset.Class;
 	}
+
+	ConstructorHelpers::FClassFinder<UCWeaponWidget> WeaponWidgetClassAsset(TEXT("/Game/Widgets/WB_Weapon"));
+	if (WeaponWidgetClassAsset.Succeeded())
+	{
+		WeaponWidgetClass = WeaponWidgetClassAsset.Class;
+	}
+
+	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>("MagMesh");
+	MagMesh->SetupAttachment(GetMesh());
+
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MagMeshAsset(TEXT("StaticMesh'/Game/Weapons/Meshes/AR4/SM_AR4_Mag_Empty.SM_AR4_Mag_Empty'"));
+	if (MagMeshAsset.Succeeded())
+	{
+		MagMesh->SetStaticMesh(MagMeshAsset.Object);
+	}
+
+
 }
 
 void ACPlayer::ChangeSpeed(float InMoveSpeed)
@@ -68,10 +88,22 @@ void ACPlayer::BeginPlay()
 	SpawnParam.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
 	Weapon = GetWorld()->SpawnActor<ACWeapon>(WeaponClass, SpawnParam);
-
+	Weapon->SetCurrentAmmo(30);
+	Weapon->SetMaximumAmmo(30);
 	CrossHairWidget = CreateWidget<UCCrossHairWidget, APlayerController>(GetController<APlayerController>(), CrossHairWidgetClass);
 	CrossHairWidget->AddToViewport();
-}
+	CrossHairWidget->SetVisibility(ESlateVisibility::Hidden);
+
+	WeaponWidget = CreateWidget<UCWeaponWidget, APlayerController>(GetController<APlayerController>(), WeaponWidgetClass);
+	WeaponWidget->AddToViewport();
+	WeaponWidget->SetCurrentAmmo(Weapon->GetCurrentAmmo());
+	WeaponWidget->SetMaximumAmmo(Weapon->GetMaximumAmmo());
+
+	FName SocketName(TEXT("Mag"));
+	MagMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
+	MagMesh->SetVisibility(false);
+
+}				
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -89,6 +121,12 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Pressed, this, &ACPlayer::OnAim);
 	PlayerInputComponent->BindAction("Aim", EInputEvent::IE_Released, this, &ACPlayer::OffAim);
+
+	PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &ACPlayer::OnFire);
+	PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Released, this, &ACPlayer::OffFire);
+
+	PlayerInputComponent->BindAction("AutoFire", EInputEvent::IE_Pressed, this, &ACPlayer::OnAutoFire);
+	PlayerInputComponent->BindAction("Reload", EInputEvent::IE_Pressed, this, &ACPlayer::Reload);
 }
 
 void ACPlayer::OnMoveForward(float Axis)
@@ -123,6 +161,8 @@ void ACPlayer::ToggleEquip()
 
 	if (Weapon->IsEquipped())
 	{
+		OffAim();
+
 		Weapon->Unequip();
 		return;
 	}
@@ -146,10 +186,14 @@ void ACPlayer::OnAim()
 	Begin_Zoom();
 
 	Weapon->Begin_Aiming();
+
+	CrossHairWidget->SetVisibility(ESlateVisibility::Visible);
 }
 
 void ACPlayer::OffAim()
 {
+	Weapon->End_Fire();
+
 	if (Weapon == nullptr) return;
 	if (Weapon->IsEquipped() == false) return;
 	if (Weapon->IsEquipping() == true) return;
@@ -163,7 +207,43 @@ void ACPlayer::OffAim()
 	End_Zoom();
 
 	Weapon->End_Aiming();
+
+	CrossHairWidget->SetVisibility(ESlateVisibility::Hidden);
 }
+
+void ACPlayer::OnFire()
+{
+	Weapon->Begin_Fire();
+}
+
+void ACPlayer::OffFire()
+{
+	Weapon->End_Fire();
+}
+
+void ACPlayer::OnAutoFire()
+{
+	if (Weapon->IsFiring() == true) return;
+	Weapon->ToggleAutoFire();
+
+	Weapon->IsAutoFire() ? WeaponWidget->OnAutoFire() : WeaponWidget->OffAutoFire();
+}
+
+void ACPlayer::Reload()
+{
+	Weapon->Reload();
+}
+
+void ACPlayer::ShowMag()
+{
+	MagMesh->SetVisibility(true);
+}
+
+void ACPlayer::HiddenMag()
+{
+	MagMesh->SetVisibility(false);
+}
+
 
 void ACPlayer::SetBodyColor(FLinearColor InBodyColor, FLinearColor InLogoColor)
 {
@@ -171,3 +251,29 @@ void ACPlayer::SetBodyColor(FLinearColor InBodyColor, FLinearColor InLogoColor)
 	LogoMaterial->SetVectorParameterValue("BodyColor", InLogoColor);
 }
 
+void ACPlayer::GetAimInfo(FVector& OutAimStart, FVector& OutAimEnd, FVector& OutAimDirection)
+{
+	OutAimDirection = CameraComp->GetForwardVector();
+
+	FVector MuzzleLoation = Weapon->GetMesh()->GetSocketLocation("MuzzleFlash");
+	FVector CameraLocation = CameraComp->GetComponentToWorld().GetLocation();
+	OutAimStart = CameraLocation + OutAimDirection * (OutAimDirection | (MuzzleLoation - CameraLocation));
+
+	FVector RandomConeDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(OutAimDirection, 0.2f);
+	RandomConeDirection *= 50000.f;
+	OutAimEnd = CameraLocation + RandomConeDirection;
+}
+
+void ACPlayer::OnTarget()
+{
+	if (CrossHairWidget == nullptr) return;
+
+	CrossHairWidget->OnTarget();
+}
+
+void ACPlayer::OffTarget()
+{
+	if (CrossHairWidget == nullptr) return;
+
+	CrossHairWidget->OffTarget();
+}

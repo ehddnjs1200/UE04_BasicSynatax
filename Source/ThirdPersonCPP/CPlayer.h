@@ -10,6 +10,8 @@ class UCameraComponent;
 class UMaterialInstanceDynamic;
 class ACWeapon;
 class UCCrossHairWidget;
+class UCWeaponWidget;
+class UStaticMeshComponent;
 
 UCLASS()
 class THIRDPERSONCPP_API ACPlayer : public ACharacter, public ICWeaponInterface
@@ -23,6 +25,15 @@ public:
 	void ChangeSpeed(float InMoveSpeed = 400.f);
 
 	FORCEINLINE ACWeapon* GetWeapon() override { return Weapon; }
+	FORCEINLINE UCWeaponWidget* GetWeaponWidget() { return WeaponWidget; }
+	virtual void GetAimInfo(FVector& OutAimStart, FVector& OutAimEnd, FVector& OutAimDirection) override;
+	virtual void OnTarget() override;
+	virtual void OffTarget() override;
+
+	void ShowMag();
+	void HiddenMag();
+
+	void Reload();
 
 protected:
 	virtual void BeginPlay() override;
@@ -40,9 +51,15 @@ private:
 	void OnAim();
 	void OffAim();
 
+	void OnFire();
+	void OffFire();
+
+	void OnAutoFire();
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetBodyColor(FLinearColor InBodyColor, FLinearColor InLogoColor);
+
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent)
@@ -65,10 +82,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "WidgetClass")
 	TSubclassOf<UCCrossHairWidget> CrossHairWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "WidgetClass")
+	TSubclassOf<UCWeaponWidget> WeaponWidgetClass;
+
+	UPROPERTY(VisibleDefaultsOnly)
+	UStaticMeshComponent* MagMesh;
+
 private:
 	UMaterialInstanceDynamic* BodyMaterial;
 	UMaterialInstanceDynamic* LogoMaterial;
 
 	ACWeapon* Weapon;
+	
 	UCCrossHairWidget* CrossHairWidget;
+	UCWeaponWidget* WeaponWidget;
 };
