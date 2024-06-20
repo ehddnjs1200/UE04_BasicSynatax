@@ -30,10 +30,14 @@ public:
 	virtual void OnTarget() override;
 	virtual void OffTarget() override;
 
+	void CreateAndAttachMeshComp();
+
 	void ShowMag();
+	
 	void HiddenMag();
 
 	void Reload();
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -56,10 +60,14 @@ private:
 
 	void OnAutoFire();
 
+	void SetupMagMeshComp();
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetBodyColor(FLinearColor InBodyColor, FLinearColor InLogoColor);
 
+	UPROPERTY(VisibleDefaultsOnly)
+	UStaticMeshComponent* MagMesh;
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent)
@@ -85,8 +93,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "WidgetClass")
 	TSubclassOf<UCWeaponWidget> WeaponWidgetClass;
 
-	UPROPERTY(VisibleDefaultsOnly)
-	UStaticMeshComponent* MagMesh;
 
 private:
 	UMaterialInstanceDynamic* BodyMaterial;

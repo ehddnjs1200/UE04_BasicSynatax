@@ -1,6 +1,7 @@
 #include "CWeapon.h"
 #include "Global.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/DecalComponent.h"
 #include "GameFramework/Character.h"
 #include "Sound/SoundCue.h"
@@ -186,18 +187,27 @@ void ACWeapon::End_Unequip()
 void ACWeapon::Reload()
 {
 
-		OwnerCharacter->PlayAnimMontage(ReloadMontage);
+	OwnerCharacter->PlayAnimMontage(ReloadMontage);
 		
 }
 
 void ACWeapon::HiddenMag()
 {
-	MeshComp->HideBoneByName("b_gun_mag", EPhysBodyOp::PBO_None);
+	FName BoneName = TEXT("b_gun_mag");
+	MeshComp->SetAllBodiesBelowSimulatePhysics(BoneName, true);
+	MeshComp->SetEnableGravity(true);
 }
 
 void ACWeapon::ShowMag()
 {
 	MeshComp->UnHideBoneByName("b_gun_mag");
+
+	ACPlayer* Player = Cast<ACPlayer>(OwnerCharacter);
+	if (Player)
+	{
+		Player->MagMesh->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, "b_gun_mag");
+	}
+
 }
 
 void ACWeapon::SetCurrentAmmo(int32 Axis)

@@ -55,17 +55,6 @@ ACPlayer::ACPlayer()
 	{
 		WeaponWidgetClass = WeaponWidgetClassAsset.Class;
 	}
-
-	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>("MagMesh");
-	MagMesh->SetupAttachment(GetMesh());
-
-	ConstructorHelpers::FObjectFinder<UStaticMesh> MagMeshAsset(TEXT("StaticMesh'/Game/Weapons/Meshes/AR4/SM_AR4_Mag_Empty.SM_AR4_Mag_Empty'"));
-	if (MagMeshAsset.Succeeded())
-	{
-		MagMesh->SetStaticMesh(MagMeshAsset.Object);
-	}
-
-
 }
 
 void ACPlayer::ChangeSpeed(float InMoveSpeed)
@@ -99,9 +88,7 @@ void ACPlayer::BeginPlay()
 	WeaponWidget->SetCurrentAmmo(Weapon->GetCurrentAmmo());
 	WeaponWidget->SetMaximumAmmo(Weapon->GetMaximumAmmo());
 
-	FName SocketName(TEXT("Mag"));
-	MagMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-	MagMesh->SetVisibility(false);
+
 
 }				
 
@@ -276,4 +263,30 @@ void ACPlayer::OffTarget()
 	if (CrossHairWidget == nullptr) return;
 
 	CrossHairWidget->OffTarget();
+}
+
+void ACPlayer::CreateAndAttachMeshComp()
+{
+	MagMesh = NewObject<UStaticMeshComponent>(this);
+
+	if (MagMesh)
+	{
+		MagMesh->SetupAttachment(GetMesh());
+		
+		SetupMagMeshComp();
+
+		MagMesh->RegisterComponent();
+	}
+}
+
+void ACPlayer::SetupMagMeshComp()
+{
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> MagMeshAsset(TEXT("StaticMesh'/Game/Weapons/Meshes/AR4/SM_AR4_Mag_Empty.SM_AR4_Mag_Empty'"));
+	if (MagMeshAsset.Succeeded())
+	{
+		MagMesh->SetStaticMesh(MagMeshAsset.Object);
+	}
+
+	FName SocketName(TEXT("Mag"));
+	MagMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
 }
