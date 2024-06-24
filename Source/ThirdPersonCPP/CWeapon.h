@@ -34,9 +34,12 @@ public:
 	
 	FORCEINLINE bool IsFiring() { return bFiring; }
 	FORCEINLINE bool IsAutoFire() { return bAutoFire; }
+	FORCEINLINE bool IsReloading() { return bReloading; }
 	FORCEINLINE int32 GetCurrentAmmo() { return CurrentAmmo; }
 	FORCEINLINE int32 GetMaximumAmmo() { return MaximumAmmo; }
 	void ToggleAutoFire();
+
+	void EndReloading();
 
 	void Begin_Aiming();
 	void End_Aiming();
@@ -67,6 +70,7 @@ public:
 
 	void Ammo();
 
+	void DestroyDroppedMagMesh();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "BulletClass")
@@ -123,10 +127,13 @@ private:
 	bool bAiming;
 	bool bFiring;
 	bool bAutoFire;
+	bool bReloading;
 
 	float CurrentPitch;
 
 	FTimerHandle AutoTimerHandle;
+	 
+	FTimerHandle MeshDestructionTimerHandle;
 
 	int32 CurrentAmmo;
 

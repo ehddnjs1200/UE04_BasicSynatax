@@ -6,9 +6,11 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
+#include "TimerManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "CAnimInstance.h"
 #include "CWeapon.h"
+#include "Mag.h"
 #include "Widgets/CCrossHairWidget.h"
 #include "Widgets/CWeaponWidget.h"
 
@@ -55,6 +57,27 @@ ACPlayer::ACPlayer()
 	{
 		WeaponWidgetClass = WeaponWidgetClassAsset.Class;
 	}
+
+	static ConstructorHelpers::FClassFinder<AMag> MagClassFinder(TEXT("Blueprint'/Game/Weapons/MyMag.MyMag'"));
+	if (MagClassFinder.Succeeded())
+	{
+		MagClass = MagClassFinder.Class;
+	}
+
+	FName SocketName(TEXT("Mag"));
+	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>("MagMesh");
+
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MagMeshAsset(TEXT("/Game/Weapons/Meshes/AR4/SM_AR4_Mag_Empty.SM_AR4_Mag_Empty"));
+	if (MagMeshAsset.Succeeded())
+	{
+		MagMesh->SetStaticMesh(MagMeshAsset.Object);
+	}
+
+	MagMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
+
+
+	MagMesh->SetVisibility(false);
+
 }
 
 void ACPlayer::ChangeSpeed(float InMoveSpeed)
@@ -87,8 +110,6 @@ void ACPlayer::BeginPlay()
 	WeaponWidget->AddToViewport();
 	WeaponWidget->SetCurrentAmmo(Weapon->GetCurrentAmmo());
 	WeaponWidget->SetMaximumAmmo(Weapon->GetMaximumAmmo());
-
-
 
 }				
 
@@ -265,28 +286,47 @@ void ACPlayer::OffTarget()
 	CrossHairWidget->OffTarget();
 }
 
-void ACPlayer::CreateAndAttachMeshComp()
+void ACPlayer::DropMag()
 {
-	MagMesh = NewObject<UStaticMeshComponent>(this);
+	FActorSpawnParameters SpawnParam;
+	SpawnParam.Owner = this;
+	SpawnParam.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	if (MagMesh)
+	Mag = GetWorld()->SpawnActor<AMag>(MagClass, SpawnParam);
+	if (!Mag)
 	{
-		MagMesh->SetupAttachment(GetMesh());
-		
-		SetupMagMeshComp();
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Mag actor."));
+		return;
+	}
+	FName SocketName(TEXT("Mag")); // 실제 소켓 이름으로 변경
 
-		MagMesh->RegisterComponent();
+		// 소켓 위치 가져오기
+	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+	if (SkeletalMeshComponent && SkeletalMeshComponent->DoesSocketExist(SocketName))
+	{
+		FVector SocketLocation = SkeletalMeshComponent->GetSocketLocation(SocketName);
+		Mag->SetActorLocation(SocketLocation);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Socket %s does not exist on the skeletal mesh component."), *SocketName.ToString());
 	}
 }
 
-void ACPlayer::SetupMagMeshComp()
+void ACPlayer::ScheduleMeshDestruction()
 {
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> MagMeshAsset(TEXT("StaticMesh'/Game/Weapons/Meshes/AR4/SM_AR4_Mag_Empty.SM_AR4_Mag_Empty'"));
-	if (MagMeshAsset.Succeeded())
-	{
-		MagMesh->SetStaticMesh(MagMeshAsset.Object);
-	}
-
-	FName SocketName(TEXT("Mag"));
-	MagMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
+	GetWorldTimerManager().SetTimer(
+		MeshDestructionTimerHandle,
+		this,
+		&ACPlayer::DestroyMagMeshAfterDelay,
+		3.0f,
+		false
+	);
 }
+
+void ACPlayer::DestroyMagMeshAfterDelay()
+{
+	Mag->Destroy();
+}
+
+

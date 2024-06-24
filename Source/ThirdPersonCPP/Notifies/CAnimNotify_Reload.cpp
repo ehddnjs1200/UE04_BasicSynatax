@@ -16,4 +16,5 @@ void UCAnimNotify_Reload::Notify(USkeletalMeshComponent* MeshComp, UAnimSequence
 
 	Weapon->SetCurrentAmmo(Weapon->GetMaximumAmmo());
 	Weapon->Ammo();
+	Weapon->EndReloading();
 }

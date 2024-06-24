@@ -120,6 +120,11 @@ void ACWeapon::ToggleAutoFire()
 	bAutoFire = !bAutoFire;
 }
 
+void ACWeapon::EndReloading()
+{
+	bReloading = false;
+}
+
 void ACWeapon::Begin_Aiming()
 {
 	bAiming = true;
@@ -133,6 +138,7 @@ void ACWeapon::End_Aiming()
 void ACWeapon::Equip()
 {
 	if (bEquipping == true) return;
+	if (bEquipped == true) return;
 	if (bEquipped == true) return;
 
 	bEquipping = true;
@@ -161,6 +167,7 @@ void ACWeapon::Unequip()
 {
 	if (bEquipping == true) return;
 	if (bEquipped == false) return;
+	if (bEquipped == true) return;
 
 	bEquipping = true;
 
@@ -186,29 +193,25 @@ void ACWeapon::End_Unequip()
 
 void ACWeapon::Reload()
 {
+	if (bEquipped == false) return;
+	if (bEquipping == true) return;
+	if (bReloading == true) return;
 
 	OwnerCharacter->PlayAnimMontage(ReloadMontage);
-		
+	bReloading = true;
 }
 
 void ACWeapon::HiddenMag()
 {
-	FName BoneName = TEXT("b_gun_mag");
-	MeshComp->SetAllBodiesBelowSimulatePhysics(BoneName, true);
-	MeshComp->SetEnableGravity(true);
+	FName BoneName(TEXT("b_gun_mag"));
+	MeshComp->HideBoneByName(BoneName, PBO_MAX);
 }
 
 void ACWeapon::ShowMag()
 {
 	MeshComp->UnHideBoneByName("b_gun_mag");
-
-	ACPlayer* Player = Cast<ACPlayer>(OwnerCharacter);
-	if (Player)
-	{
-		Player->MagMesh->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, "b_gun_mag");
-	}
-
 }
+
 
 void ACWeapon::SetCurrentAmmo(int32 Axis)
 {
@@ -236,6 +239,7 @@ void ACWeapon::Begin_Fire()
 	if (bEquipping == true) return;
 	if (bAiming == false) return;
 	if (bFiring == true) return;
+	if (bReloading == true) return;
 
 	bFiring = true;
 	CurrentPitch = 0.f;
@@ -261,6 +265,7 @@ void ACWeapon::End_Fire()
 
 void ACWeapon::Firing()
 {
+	if (bReloading == true) return;
 	ACPlayer* Player = Cast<ACPlayer>(OwnerCharacter);
 	if (CurrentAmmo > 0)
 	{
@@ -343,6 +348,23 @@ void ACWeapon::Firing()
 		if (Player)
 		{
 			Player->Reload();
+		}
+	}
+}
+
+void ACWeapon::DestroyDroppedMagMesh()
+{
+	TArray<USceneComponent*> ChildrenComp;
+	MeshComp->GetChildrenComponents(true, ChildrenComp);
+	for (USceneComponent* Child : ChildrenComp)
+	{
+		if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Child))
+		{
+			if (StaticMeshComp->GetName().Contains("DroppedMag"))
+			{
+				StaticMeshComp->DestroyComponent();
+				break;
+			}
 		}
 	}
 }

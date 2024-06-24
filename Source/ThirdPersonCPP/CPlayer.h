@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "TimerManager.h"
 #include "CWeaponInterface.h"
 #include "CPlayer.generated.h"
 
@@ -9,6 +10,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UMaterialInstanceDynamic;
 class ACWeapon;
+class AMag;
 class UCCrossHairWidget;
 class UCWeaponWidget;
 class UStaticMeshComponent;
@@ -30,14 +32,17 @@ public:
 	virtual void OnTarget() override;
 	virtual void OffTarget() override;
 
-	void CreateAndAttachMeshComp();
-
 	void ShowMag();
 	
 	void HiddenMag();
 
 	void Reload();
 
+	void DropMag();
+
+	void ScheduleMeshDestruction();
+
+	void DestroyMagMeshAfterDelay();
 
 protected:
 	virtual void BeginPlay() override;
@@ -59,8 +64,6 @@ private:
 	void OffFire();
 
 	void OnAutoFire();
-
-	void SetupMagMeshComp();
 
 public:
 	UFUNCTION(BlueprintCallable)
@@ -93,13 +96,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "WidgetClass")
 	TSubclassOf<UCWeaponWidget> WeaponWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "MagClass")
+	TSubclassOf<AMag> MagClass;
 
 private:
 	UMaterialInstanceDynamic* BodyMaterial;
 	UMaterialInstanceDynamic* LogoMaterial;
 
 	ACWeapon* Weapon;
+
+	AMag* Mag;
 	
 	UCCrossHairWidget* CrossHairWidget;
 	UCWeaponWidget* WeaponWidget;
+
+	FTimerHandle MeshDestructionTimerHandle;
 };
